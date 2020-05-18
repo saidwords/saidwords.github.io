@@ -21,11 +21,16 @@
     <div id='message'></div>
     <button onclick="begin()">Start</button>
     <button id='muteButton' onclick="mutePiano()">Mute</button>
-    <button onclick="deleteQuestionHistory()">delete history</button>
     <button onclick="about()">about</button>
-    <div style="display:none">
+    <button onclick="deleteQuestionHistory()">delete history</button>
+
+    <div>
         <input type="checkbox" id="play_question" onChange="setPlayQuestion(this)">
         <label for="play_question">Play question notes</label>
+        <div id = 'questionPlayDelayDiv' style="display:none">
+            <input type="range" min="0" max="2000" value="0" class="slider" id="questionPlayDelay">
+            <label id = "questionPlayDelayLabel" for="questionPlayDelay"></label>
+        </div>
     </div>
     <div id="calibrate">
     </div>

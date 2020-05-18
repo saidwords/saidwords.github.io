@@ -6,8 +6,6 @@ var pianoRoll = null;
 var stack = []; // holds the list of asked questions and their rank
 var midiMap = {};
 var keysDown = []; // all the keys that the user is currently holding down on the keyboard
-var allNotes = []; // a list of all notes that will be practiced
-var textBox = null;
 var artist = null;
 var tab = null;
 var renderer = null;
@@ -21,11 +19,27 @@ let mute = false;
 let muteButton = {};
 let messageBox = {};
 let playQuestion = false; // if true the play the sound of the piano notes that make up the question
+let procId=null;
+let questionPlayDelaySlider={};
+let questionPlayDelayLabel={};
+let questionPlayDelayDiv={};
+let questionPlayDelay=0;
 
 function startUp() {
     pianoRoll = document.getElementById("pianoRoll");
     muteButton = document.getElementById("muteButton");
     messageBox = document.getElementById("message");
+    questionPlayDelayDiv= document.getElementById("questionPlayDelayDiv");
+    questionPlayDelayLabel = document.getElementById('questionPlayDelayLabel');
+    questionPlayDelaySlider = document.getElementById("questionPlayDelay");
+    questionPlayDelaySlider.oninput = function() {
+        if(this.value>0){
+            questionPlayDelayLabel.innerHTML = "after "+(this.value/1000)+" seconds";
+            questionPlayDelay=this.value;
+        }else{
+            questionPlayDelayLabel.innerHTML="";
+        }
+    }
     debug = document.getElementById("debug");
     VF = Vex.Flow;
     renderer = new VF.Renderer(pianoRoll, VF.Renderer.Backends.SVG);
@@ -311,11 +325,21 @@ function begin() {
     // get a question and draw it on the stave
     question = getQuestion();
     drawNotes(question.c);
-    playQuestionNotes();
+    playQuestionNotes(questionPlayDelay);
 }
 
 function setPlayQuestion(e) {
     playQuestion = e.checked;
+    if(playQuestion){
+        questionPlayDelayDiv.style="";
+        if(questionPlayDelay==0){
+            questionPlayDelaySlider.value=1000;
+            questionPlayDelay=1000;
+            questionPlayDelaySlider.oninput();
+        }
+    }else{
+        questionPlayDelayDiv.style="display:none";
+    }
 }
 
 /*
@@ -363,11 +387,21 @@ function playSample(note) {
 }
 
 
-function playQuestionNotes() {
+function playQuestionNotes(delay) {
     if (!playQuestion) return;
-    for (let n = 0; n < question.c.length; n++) {
-        playSample(question.c[n].cc);
+    if(procId!==null){
+        return;
     }
+    // TODO: only play if there are no keys down and some time has passed
+    procId = setTimeout(function(){
+        procId=null;
+        if(keysDown.length>0)return;
+        for (let n = 0; n < question.c.length; n++) {
+            playSample(question.c[n].cc);
+        }
+
+    },delay);
+
 }
 
 function stopSample(note) {
@@ -608,7 +642,7 @@ function noteOff(note) {
 
     if (keysDown.length == 0) {
         drawNotes(question.c);
-        playQuestionNotes();
+        playQuestionNotes(questionPlayDelay);
     }
 }
 
@@ -690,6 +724,7 @@ function deleteQuestionHistory() {
         tx.executeSql('DELETE FROM questions', [],
             function (transaction, result) {
                 comboPtr = 1;
+                stack=[];
             }
         );
     });
