@@ -19,25 +19,26 @@ let mute = false;
 let muteButton = {};
 let messageBox = {};
 let playQuestion = false; // if true the play the sound of the piano notes that make up the question
-let procId=null;
-let questionPlayDelaySlider={};
-let questionPlayDelayLabel={};
-let questionPlayDelayDiv={};
-let questionPlayDelay=0;
+let procId = null;
+let questionPlayDelaySlider = {};
+let questionPlayDelayLabel = {};
+let questionPlayDelayDiv = {};
+let questionPlayDelay = 0;
 
+//TODO: allow the user to enter notes on the keyboard
 function startUp() {
     pianoRoll = document.getElementById("pianoRoll");
     muteButton = document.getElementById("muteButton");
     messageBox = document.getElementById("message");
-    questionPlayDelayDiv= document.getElementById("questionPlayDelayDiv");
+    questionPlayDelayDiv = document.getElementById("questionPlayDelayDiv");
     questionPlayDelayLabel = document.getElementById('questionPlayDelayLabel');
     questionPlayDelaySlider = document.getElementById("questionPlayDelay");
-    questionPlayDelaySlider.oninput = function() {
-        if(this.value>0){
-            questionPlayDelayLabel.innerHTML = "after "+(this.value/1000)+" seconds";
-            questionPlayDelay=this.value;
-        }else{
-            questionPlayDelayLabel.innerHTML="";
+    questionPlayDelaySlider.oninput = function () {
+        if (this.value > 0) {
+            questionPlayDelayLabel.innerHTML = "after " + (this.value / 1000) + " seconds";
+            questionPlayDelay = this.value;
+        } else {
+            questionPlayDelayLabel.innerHTML = "";
         }
     }
     debug = document.getElementById("debug");
@@ -309,15 +310,15 @@ function startUp() {
     drawNotes([]);
 }
 
-function about(){
-    if(messageBox.innerHTML.length>2){
-        messageBox.innerHTML="";
+function about() {
+    if (messageBox.innerHTML.length > 2) {
+        messageBox.innerHTML = "";
         return;
     }
-    messageBox.innerHTML="Piano Muse uses a Leitner method to show you notes that you have the most difficulty memorizing.<br>"+
-        "Just click 'start' and press the key on your Midi keyboard that matches the notes displayed on the staff.<br>"+
-        "Piano Muse will store your progress (on your computer) and will pick up where you left off.<br>"+
-        "Note: only two octaves on your keyboard are used for practice. If the Muse is not responding to your keyboard then try a different octave.<br>"+
+    messageBox.innerHTML = "Piano Muse uses a Leitner method to show you notes that you have the most difficulty memorizing.<br>" +
+        "Just click 'start' and press the key on your Midi keyboard that matches the notes displayed on the staff.<br>" +
+        "Piano Muse will store your progress (on your computer) and will pick up where you left off.<br>" +
+        "Note: only two octaves on your keyboard are used for practice. If the Muse is not responding to your keyboard then try a different octave.<br>" +
         "Contact me for questions: saidwords@gmail.com";
 }
 
@@ -330,15 +331,15 @@ function begin() {
 
 function setPlayQuestion(e) {
     playQuestion = e.checked;
-    if(playQuestion){
-        questionPlayDelayDiv.style="";
-        if(questionPlayDelay==0){
-            questionPlayDelaySlider.value=1000;
-            questionPlayDelay=1000;
+    if (playQuestion) {
+        questionPlayDelayDiv.style = "";
+        if (questionPlayDelay == 0) {
+            questionPlayDelaySlider.value = 1000;
+            questionPlayDelay = 1000;
             questionPlayDelaySlider.oninput();
         }
-    }else{
-        questionPlayDelayDiv.style="display:none";
+    } else {
+        questionPlayDelayDiv.style = "display:none";
     }
 }
 
@@ -389,18 +390,18 @@ function playSample(note) {
 
 function playQuestionNotes(delay) {
     if (!playQuestion) return;
-    if(procId!==null){
+    if (procId !== null) {
         return;
     }
     // TODO: only play if there are no keys down and some time has passed
-    procId = setTimeout(function(){
-        procId=null;
-        if(keysDown.length>0)return;
+    procId = setTimeout(function () {
+        procId = null;
+        if (keysDown.length > 0) return;
         for (let n = 0; n < question.c.length; n++) {
             playSample(question.c[n].cc);
         }
 
-    },delay);
+    }, delay);
 
 }
 
@@ -454,7 +455,7 @@ function drawNotes(notes) {
         }
     }
 
-    var formatNotes = function (chord) {
+    let formatNotes = function (chord) {
         let s = "notes :h ";
 
         for (let i in chord) {
@@ -473,9 +474,11 @@ function drawNotes(notes) {
                     let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
                     s += " $.italic." + letter + (letter.length == 1 ? ' ' : '') + "$ ";
                 } else {
-                    s += "$  $";
+                    s += "$  $"; //TODO: show the uses keypress
                 }
             } else {
+                let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
+                //s += " $" + letter + (letter.length == 1 ? ' ' : '') + "$ ";// show the question letter
                 s += "$  $";
             }
         }
@@ -499,15 +502,23 @@ function drawNotes(notes) {
     artist.render(renderer);
 }
 
-/*
-Returns the n'th chord out of the set of all possible chords
-@param size int - the number of notes in the chord
-*/
 function generateChord(nth) {
     let combo = [];
     let chord = [];
+    let isaChord = false;
 
-    while (!isChord(combo) && nth < Number.MAX_SAFE_INTEGER - 1) {
+    let filter = [
+        ["A", "B"],
+        ["G", "A"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "F"],
+        ["F", "G"]
+    ];
+
+    while (!isaChord && nth < Number.MAX_SAFE_INTEGER - 1) {
+
         combo = [];
         chord = [];
         for (let i = 0; i < vexNotes.length; i++) {
@@ -517,35 +528,31 @@ function generateChord(nth) {
             }
         }
 
-        nth++;
-    }
-
-    comboPtr = nth;
-    return chord;
-}
-
-// if all of the notes are part or whole of any chord then return true
-function isChord(notes) {
-    let c = 0;
-    if (notes.length == 0 || notes.length > 4) return false;
-
-    for (let a = 0; a < allChords.length; a++) {
-        if (notes.length <= allChords[a].length) { // only check chords that are at least as long as our notes
-            c = 0;
-            for (let i = 0; i < notes.length; i++) {
-                let note = notes[i].slice(0, notes[i].indexOf("/"));
-                for (let n = 0; n < allChords[a].length; n++) {
-                    if (note == allChords[a][n]) {
-                        c++; // count how many of our notes match this chord
+        //console.log("candidate = "+JSON.stringify(combo));
+        isaChord = true;
+        // filter out combinations that contain adjacent white keys
+        if (combo.length > 0) {
+            for (let i = 0; i < filter.length; i++) {
+                for (let c = 0; c < combo.length - 1; c++) {
+                    let note = combo[c].slice(0, combo[c].indexOf("/"));
+                    if (note == filter[i][0]) {
+                        for (let c2 = 0; c2 < combo.length; c2++) {
+                            note = combo[c2].slice(0, combo[c2].indexOf("/"));
+                            if (note == filter[i][1]) {
+                                nth++;
+                                isaChord = false;
+                                break;
+                            }
+                        }
                     }
                 }
             }
-            if (c == notes.length) { // all of our notes must exist in the chord
-                return true;
-            }
         }
     }
-    return false;
+
+    comboPtr = nth + 1;
+    //console.log(JSON.stringify(combo));
+    return chord;
 }
 
 function getMIDIMessage(midiMessage) {
@@ -724,7 +731,7 @@ function deleteQuestionHistory() {
         tx.executeSql('DELETE FROM questions', [],
             function (transaction, result) {
                 comboPtr = 1;
-                stack=[];
+                stack = [];
             }
         );
     });
