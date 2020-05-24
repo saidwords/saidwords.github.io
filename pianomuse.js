@@ -10,10 +10,10 @@ var artist = null;
 var tab = null;
 var renderer = null;
 var samples = {};
+let allChords = [];
 var vexNotes = [];
 var debug = {};
 var db = {};
-var allChords = [];
 let comboPtr = 1;
 let mute = false;
 let muteButton = {};
@@ -25,7 +25,7 @@ let questionPlayDelayLabel = {};
 let questionPlayDelayDiv = {};
 let questionPlayDelay = 0;
 
-//TODO: allow the user to enter notes on the keyboard
+//TODO: Allow the user to select for practice the treble, bass or both at the same time
 function startUp() {
     pianoRoll = document.getElementById("pianoRoll");
     muteButton = document.getElementById("muteButton");
@@ -49,15 +49,96 @@ function startUp() {
     initDatabase();
     loadQuestionHistory()
 
+    // https://www.piano-keyboard-guide.com/keyboard-chords.html
+    allChords = [
+        ["C", "E", "G"],
+        ["C#", "F", "G#"],
+        ["D", "F#", "G#"],
+        ["E@", "G", "b@"],
+        ["B", "E", "G#"],
+        ["A", "C", "F"],
+        ["A#", "C#", "F#"],
+        ["B", "D", "G"],
+        ["A@", "C", "E@"],
+        ["A", "C#", "E"],
+        ["B@", "D", "F"],
+        ["B", "D#", "F#"],
+        ["C", "E@", "G"],
+        ["C#", "E", "G#"],
+        ["A", "D", "F"],
+        ["B@", "E@", "G@"],
+        ["B", "E", "G"],
+        ["A@", "C", "F"],
+        ["A", "C#", "F#"],
+        ["B@", "D", "G"],
+        ["A@", "B", "E@"],
+        ["A", "C", "E"],
+        ["B@", "D@", "F"],
+        ["B", "D", "F#"],
+        ["C", "E@", "G@"],
+        ["C#", "E", "G"],
+        ["A@", "D", "F"],
+        ["A", "E@", "G@"],
+        ["B@", "E", "G"],
+        ["A@", "B", "F"],
+        ["A", "C", "F#"],
+        ["B@", "D@", "G"],
+        ["A@", "B", "D"],
+        ["A", "C", "E@"],
+        ["B@", "D@", "E"],
+        ["B", "D", "F"],
+        ["B", "C", "E", "G"],
+        ["C", "C#", "F", "G#"],
+        ["A", "C#", "D", "F#"],
+        ["B@", "D", "E@", "G"],
+        ["B", "D#", "E", "G#"],
+        ["A", "C", "E", "F"],
+        ["A#", "C#", "F", "F#"],
+        ["B", "D", "F#", "G"],
+        ["A@", "C", "E@", "G"],
+        ["A", "C#", "E", "G#"],
+        ["A", "B@", "D", "F"],
+        ["A#", "B", "D#", "F#"],
+        ["B@", "C", "E", "G"],
+        ["B", "C#", "F", "G#"],
+        ["A", "C", "D", "F#"],
+        ["B@", "D@", "E@", "G"],
+        ["B", "D", "E", "G#"],
+        ["A", "C", "E@", "F"],
+        ["A#", "C#", "E", "F#"],
+        ["B", "D", "F", "G"],
+        ["A@", "C", "E@", "G@"],
+        ["A", "C#", "E", "G"],
+        ["A@", "B@", "D", "F"],
+        ["A", "B", "D#", "F#"],
+        ["B@", "C", "E@", "G"],
+        ["B", "C#", "E", "G#"],
+        ["A", "C", "D", "F"],
+        ["B@", "D@", "E@", "G@"],
+        ["B", "D", "E", "G"],
+        ["A@", "C", "E@", "F"],
+        ["A", "C#", "E", "F#"],
+        ["B@", "D", "F", "G"],
+        ["A@", "B", "E@", "G@"],
+        ["A", "C", "E", "G"],
+        ["A@", "B@", "D@", "F"],
+        ["A", "B", "D", "F#"],
+        ["B@", "C", "E@", "G@"],
+        ["B", "C#", "E", "G"],
+        ["A@", "C", "D", "F"],
+        ["A", "D@", "E@", "G@"],
+        ["B@", "D", "E", "G"],
+        ["A@", "B", "E@", "F"],
+        ["A", "C", "E", "F#"],
+        ["B@", "D@", "F", "G"],
+        ["A@", "B", "D", "G@"],
+        ["A", "C", "E@", "G"],
+        ["A@", "B@", "D@", "E"],
+        ["A", "B", "D", "F"]];
+
+
     // A list of all piano keys that will be practiced in order of appearance
     vexNotes = [
-        /*
-        36:{clef: "bass", keys: ["C/2"], duration: "h",cc:36,w:true },
-        37:{clef: "bass", keys: ["C#/2"], duration: "h",cc:37 },
-        38:{clef: "bass", keys: ["D/2"], duration: "h",cc:38 },
-        39:{clef: "bass", keys: ["D#/2"], duration: "h",cc:39 },
-        40:{clef: "bass", keys: ["E/2"], duration: "h",cc:40 },
-        */
 
         {clef: "treble", keys: ["C/4"], duration: "h", cc: 60, w: true}, //middle-C
         {clef: "treble", keys: ["D/4"], duration: "h", cc: 62, w: true},
@@ -99,204 +180,8 @@ function startUp() {
         {clef: "bass", keys: ["A@/3"], duration: "h", cc: 56, w: false},
         {clef: "bass", keys: ["B@/3"], duration: "h", cc: 58, w: false},
 
-        /*
-        {clef: "bass", keys: ["B/2"], duration: "h", cc: 47, w: true},
-        {clef: "bass", keys: ["B@/2"], duration: "h", cc: 46, w: false},
-        {clef: "bass", keys: ["A#/2"], duration: "h", cc: 46, w: false},
-        {clef: "bass", keys: ["A/2"], duration: "h", cc: 45, w: true},
-        {clef: "bass", keys: ["A@/2"], duration: "h", cc: 44, w: false},
-        {clef: "bass", keys: ["G#/2"], duration: "h", cc: 44, w: false},
-        {clef: "bass", keys: ["G/2"], duration: "h", cc: 43, w: true},
-        {clef: "bass", keys: ["G@/2"], duration: "h", cc: 42, w: false},
-        {clef: "bass", keys: ["F#/2"], duration: "h", cc: 42, w: false},
-        {clef: "bass", keys: ["F/2"], duration: "h", cc: 41, w: true},
-        {clef: "treble", keys: ["C/5"], duration: "h", cc: 72, w: true},
-        */
-
     ];
 
-    // https://www.piano-keyboard-guide.com/keyboard-chords.html
-    allChords = [
-        // Major chords
-        // C major – C E G
-        ["C", "E", "G"],
-        // C# major – C# E# G#
-        ["C#", "F", "G#"],
-        // D major – D F# A
-        ["D", "F#", "G#"],
-        // Eb major – Eb G Bb
-        ["E@", "G", "b@"],
-        // E major – E G# B
-        ["E", "G#", "B"],
-        // F major – F A C
-        ["F", "A", "C"],
-        // F# major – F# A# C#
-        ["F#", "A#", "C#"],
-        // G major – G B D
-        ["G", "B", "D"],
-        // Ab major – Ab C Eb
-        ["A@", "C", "E@"],
-        // A major – A C# E
-        ["A", "C#", "E"],
-        // Bb major – Bb D F
-        ["B@", "D", "F"],
-        // B major – B D# F#
-        ["B", "D#", "F#"],
-
-        // Minor chords
-        // C minor – C Eb G
-        ["C", "E@", "G"],
-        // C# minor – C# E G#
-        ["C#", "E", "G#"],
-        // D minor – D F A
-        ["D", "F", "A"],
-        // Eb minor – Eb Gb Bb
-        ["E@", "G@", "B@"],
-        // E minor – E G B
-        ["E", "G", "B"],
-        // F minor – F Ab C
-        ["F", "A@", "C"],
-        // F# minor – F# A C#
-        ["F#", "A", "C#"],
-        // G minor – G Bb D
-        ["G", "B@", "D"],
-        // Ab minor – Ab Cb(B) Eb
-        ["A@", "B", "E@"],
-        // A minor – A C E
-        ["A", "C", "E"],
-        // Bb minor – Bb Db F
-        ["B@", "D@", "F"],
-        // B minor – B D F#
-        ["B", "D", "F#"],
-        // Diminished chords
-        // C diminished – C Eb Gb
-        ["C", "E@", "G@"],
-        // C# diminished – C# E G
-        ["C#", "E", "G"],
-        // D diminished – D F Ab
-        ["D", "F", "A@"],
-        // Eb diminished – Eb Gb Bbb(A)
-        ["E@", "G@", "A"],
-        // E diminished – E G Bb
-        ["E", "G", "B@"],
-        // F diminished – F Ab Cb(B)
-        ["F", "A@", "B"],
-        // F# diminished – F# A C
-        ["F#", "A", "C"],
-        // G diminished – G Bb Db
-        ["G", "B@", "D@"],
-        // Ab diminished – Ab Cb Ebb(D)
-        ["A@", "B", "D"],
-        // A diminished – A C Eb
-        ["A", "C", "E@"],
-        // Bb diminished – Bb Db Fb(E)
-        ["B@", "D@", "E"],
-        // B diminished – B D F
-        ["B", "D", "F"],
-
-        // Major 7th chords
-        // C major seventh – C E G B
-        ["C", "E", "G", "B"],
-        // C# major seventh – C# E#(F) G# B#(C)
-        ["C#", "F", "G#", "C"],
-        // D major seventh – D F# A C#
-        ["D", "F#", "A", "C#"],
-        // Eb major seventh – Eb G Bb D
-        ["E@", "G", "B@", "D"],
-        // E major seventh – E G# B D#
-        ["E", "G#", "B", "D#"],
-        // F major seventh – F A C E
-        ["F", "A", "C", "E"],
-        // F# major seventh – F# A# C# E#(F)
-        ["F#", "A#", "C#", "F"],
-        // G major seventh – G B D F#
-        ["G", "B", "D", "F#"],
-        // Ab major seventh – Ab C Eb G
-        ["A@", "C", "E@", "G"],
-        // A major seventh – A C# E G#
-        ["A", "C#", "E", "G#"],
-        // Bb major seventh – Bb D F A
-        ["B@", "D", "F", "A"],
-        // B major seventh – B D# F# A#
-        ["B", "D#", "F#", "A#"],
-        // Dominant 7th chords
-        // C dominant seventh – C E G Bb
-        ["C", "E", "G", "B@"],
-        // C# dominant seventh – C# E#(F) G# B
-        ["C#", "F", "G#", "B"],
-        // D dominant seventh – D F# A C
-        ["D", "F#", "A", "C"],
-        // Eb dominant seventh – Eb G Bb Db
-        ["E@", "G", "B@", "D@"],
-        // E dominant seventh – E G# B D
-        ["E", "G#", "B", "D"],
-        // F dominant seventh – F A C Eb
-        ["F", "A", "C", "E@"],
-        // F# dominant seventh – F# A# C# E
-        ["F#", "A#", "C#", "E"],
-        // G dominant seventh – G B D F
-        ["G", "B", "D", "F"],
-        // Ab dominant seventh – Ab C Eb Gb
-        ["A@", "C", "E@", "G@"],
-        // A dominant seventh – A C# E G
-        ["A", "C#", "E", "G"],
-        // Bb dominant seventh – Bb D F Ab
-        ["B@", "D", "F", "A@"],
-        // B dominant seventh – B D# F# A
-        ["B", "D#", "F#", "A"],
-
-        //Minor 7th Keyboard Chords
-        // C minor seventh – C Eb G Bb
-        ["C", "E@", "G", "B@"],
-        // C# minor seventh – C# E G# B
-        ["C#", "E", "G#", "B"],
-        // D minor seventh – D F A C
-        ["D", "F", "A", "C"],
-        // Eb minor seventh – Eb Gb Bb Db
-        ["E@", "G@", "B@", "D@"],
-        // E minor seventh – E G B D
-        ["E", "G", "B", "D"],
-        // F minor seventh – F Ab C Eb
-        ["F", "A@", "C", "E@"],
-        // F# minor seventh – F# A C# E
-        ["F#", "A", "C#", "E"],
-        // G minor seventh – G Bb D F
-        ["G", "B@", "D", "F"],
-        // Ab minor seventh – Ab Cb(B) Eb Gb
-        ["A@", "B", "E@", "G@"],
-        // A minor seventh – A C E G
-        ["A", "C", "E", "G"],
-        // Bb minor seventh – Bb Db F Ab
-        ["B@", "D@", "F", "A@"],
-        // B minor seventh – B D F# A
-        ["B", "D", "F#", "A"],
-
-        // Minor 7th flat five chords
-        // C minor seventh flat five – C Eb Gb Bb
-        ["C", "E@", "G@", "B@"],
-        // C# minor seventh flat five – C# E G B
-        ["C#", "E", "G", "B"],
-        // D minor seventh flat five – D F Ab C
-        ["D", "F", "A@", "C"],
-        // Eb minor seventh flat five – Eb Gb Bbb(A) Db
-        ["E@", "G@", "A", "D@"],
-        // E minor seventh flat five – E G Bb D
-        ["E", "G", "B@", "D"],
-        // F minor seventh flat five – F Ab Cb(B) Eb
-        ["F", "A@", "B", "E@"],
-        // F# minor seventh flat five – F# A C E
-        ["F#", "A", "C", "E"],
-        // G minor seventh flat five – G Bb Db F
-        ["G", "B@", "D@", "F"],
-        // Ab minor seventh flat five – Ab Cb Ebb(D) Gb
-        ["A@", "B", "D", "G@"],
-        // A minor seventh flat five – A C Eb G
-        ["A", "C", "E@", "G"],
-        // Bb minor seventh flat five – Bb Db Fb(E) Ab
-        ["B@", "D@", "E", "A@"],
-        // B minor seventh flat five – B D F A
-        ["B", "D", "F", "A"]
-    ];
 
     // load notes
     for (let i in vexNotes) {
@@ -474,7 +359,7 @@ function drawNotes(notes) {
                     let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
                     s += " $.italic." + letter + (letter.length == 1 ? ' ' : '') + "$ ";
                 } else {
-                    s += "$  $"; //TODO: show the uses keypress
+                    s += "$  $"; //TODO: show the users keypress
                 }
             } else {
                 let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
@@ -502,6 +387,12 @@ function drawNotes(notes) {
     artist.render(renderer);
 }
 
+/**
+ * Returns the nth iteration of all possible combinations of notes
+ *
+ * @param nth
+ * @returns {[]} an array of notes
+ */
 function generateChord(nth) {
     let combo = [];
     let chord = [];
@@ -509,7 +400,7 @@ function generateChord(nth) {
 
     let filter = [
         ["A", "B"],
-        ["G", "A"],
+        ["A", "G"],
         ["B", "C"],
         ["C", "D"],
         ["D", "E"],
@@ -517,41 +408,65 @@ function generateChord(nth) {
         ["F", "G"]
     ];
 
-    while (!isaChord && nth < Number.MAX_SAFE_INTEGER - 1) {
-
+    while (!isaChord && nth < Number.MAX_SAFE_INTEGER - 5) {
         combo = [];
-        chord = [];
+        let notes = [];
         for (let i = 0; i < vexNotes.length; i++) {
             if ((nth & 2 ** i) > 0) {
-                combo.push(vexNotes[i].keys[0]);
-                chord.push(vexNotes[i]);
+                combo.push(i);
+                notes.push(vexNotes[i].keys[0].slice(0, vexNotes[i].keys[0].indexOf("/"))); //strip the octave marker
             }
         }
+        if (notes.length > 4) {
+            nth++;
+            continue;
+        }
 
-        //console.log("candidate = "+JSON.stringify(combo));
         isaChord = true;
         // filter out combinations that contain adjacent white keys
-        if (combo.length > 0) {
-            for (let i = 0; i < filter.length; i++) {
-                for (let c = 0; c < combo.length - 1; c++) {
-                    let note = combo[c].slice(0, combo[c].indexOf("/"));
-                    if (note == filter[i][0]) {
-                        for (let c2 = 0; c2 < combo.length; c2++) {
-                            note = combo[c2].slice(0, combo[c2].indexOf("/"));
-                            if (note == filter[i][1]) {
-                                nth++;
-                                isaChord = false;
-                                break;
-                            }
+        for (let i = 0; i < filter.length && isaChord; i++) {
+            for (let c = 0; c < notes.length && isaChord; c++) {
+                if (notes[c] == filter[i][0]) {
+                    for (let c2 = 0; c2 < notes.length; c2++) {
+                        if (notes[c2] == filter[i][1]) {
+                            isaChord = false;
+                            break;
                         }
                     }
                 }
             }
         }
+
+        /*
+        filter out combinations that are not part of any chord
+        */
+        if (isaChord) {
+            let f = 0;
+            isaChord = false;
+            let found = false;
+            for (let a = 0; a < allChords.length && !found; a++) {
+                f = 0;
+                for (let c = 0; c < allChords[a].length && !found; c++) {
+                    found = false;
+                    for (let i = 0; i < notes.length; i++) {
+                        if (notes[i] == allChords[a][c]) {
+                            f++;
+                        }
+                    }
+                    if (f == notes.length) {
+                        found = true;
+                        isaChord = true;
+                    }
+                }
+            }
+        }
+        if (!isaChord) nth++;
     }
 
+    for (let i = 0; i < combo.length; i++) {
+        chord.push(vexNotes[combo[i]]);
+    }
     comboPtr = nth + 1;
-    //console.log(JSON.stringify(combo));
     return chord;
 }
 
@@ -668,8 +583,9 @@ function recordAnswer(isCorrect) {
             stack.push(question);
 
             // generate a new question to put at front of stack
-            chord = generateChord(comboPtr);
-            question = {c: chord, r: 0};
+            question = {c: [], r: 0};
+            question.c = generateChord(comboPtr);
+
         } else {
             stack.splice(question.r, 0, question);
             question = getQuestion();
