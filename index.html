@@ -27,10 +27,21 @@
     <div>
         <input type="checkbox" id="play_question" onChange="setPlayQuestion(this)">
         <label for="play_question">Play question notes</label>
-        <div id = 'questionPlayDelayDiv' style="display:none">
+        <div id='questionPlayDelayDiv' style="display:none">
             <input type="range" min="0" max="2000" value="0" class="slider" id="questionPlayDelay">
-            <label id = "questionPlayDelayLabel" for="questionPlayDelay"></label>
+            <label id="questionPlayDelayLabel" for="questionPlayDelay"></label>
         </div>
+        <br>
+        <div>
+            <input type="radio" id="trebleClef" name="clef" checked value="treble" onchange="selectClef(this)">
+            <label for="trebleClef">Treble</label><br>
+            <input type="radio" id="bassClef" name="clef" value="bass" onchange="selectClef(this)">
+            <label for="bassClef">Bass</label><br>
+            <input type="radio" id="bothClef" name="clef" value="both" onchange="selectClef(this)">
+            <label for="BothClef">Both</label>
+        </div>
+
+
     </div>
     <div id="calibrate">
     </div>

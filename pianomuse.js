@@ -14,7 +14,7 @@ let allChords = [];
 var vexNotes = [];
 var debug = {};
 var db = {};
-let comboPtr = 1;
+let globalNth = 1;
 let mute = false;
 let muteButton = {};
 let messageBox = {};
@@ -24,6 +24,7 @@ let questionPlayDelaySlider = {};
 let questionPlayDelayLabel = {};
 let questionPlayDelayDiv = {};
 let questionPlayDelay = 0;
+let selectedClef = 0; // 0 = treble 1= bass, 3=both
 
 //TODO: Allow the user to select for practice the treble, bass or both at the same time
 function startUp() {
@@ -141,43 +142,40 @@ function startUp() {
     vexNotes = [
 
         {clef: "treble", keys: ["C/4"], duration: "h", cc: 60, w: true}, //middle-C
-        {clef: "treble", keys: ["D/4"], duration: "h", cc: 62, w: true},
-        {clef: "treble", keys: ["E/4"], duration: "h", cc: 64, w: true},
-        {clef: "treble", keys: ["F/4"], duration: "h", cc: 65, w: true},
-        {clef: "treble", keys: ["G/4"], duration: "h", cc: 67, w: true},
-        {clef: "treble", keys: ["A/4"], duration: "h", cc: 69, w: true},
-        {clef: "treble", keys: ["B/4"], duration: "h", cc: 71, w: true},
-
-        {clef: "treble", keys: ["C#/4"], duration: "h", cc: 61, w: false},
-        {clef: "treble", keys: ["D#/4"], duration: "h", cc: 63, w: false},
-        {clef: "treble", keys: ["F#/4"], duration: "h", cc: 66, w: false},
-        {clef: "treble", keys: ["G#/4"], duration: "h", cc: 68, w: false},
-        {clef: "treble", keys: ["A#/4"], duration: "h", cc: 70, w: false},
-
-        {clef: "treble", keys: ["D@/4"], duration: "h", cc: 61, w: false},
-        {clef: "treble", keys: ["E@/4"], duration: "h", cc: 63, w: false},
-        {clef: "treble", keys: ["G@/4"], duration: "h", cc: 66, w: false},
-        {clef: "treble", keys: ["A@/4"], duration: "h", cc: 68, w: false},
-        {clef: "treble", keys: ["B@/4"], duration: "h", cc: 70, w: false},
-
         {clef: "bass", keys: ["C/3"], duration: "h", cc: 48, w: true},
+        {clef: "treble", keys: ["D/4"], duration: "h", cc: 62, w: true},
         {clef: "bass", keys: ["D/3"], duration: "h", cc: 50, w: true},
+        {clef: "treble", keys: ["E/4"], duration: "h", cc: 64, w: true},
         {clef: "bass", keys: ["E/3"], duration: "h", cc: 52, w: true},
+        {clef: "treble", keys: ["F/4"], duration: "h", cc: 65, w: true},
         {clef: "bass", keys: ["F/3"], duration: "h", cc: 53, w: true},
+        {clef: "treble", keys: ["G/4"], duration: "h", cc: 67, w: true},
         {clef: "bass", keys: ["G/3"], duration: "h", cc: 55, w: true},
+        {clef: "treble", keys: ["A/4"], duration: "h", cc: 69, w: true},
         {clef: "bass", keys: ["A/3"], duration: "h", cc: 57, w: true},
+        {clef: "treble", keys: ["B/4"], duration: "h", cc: 71, w: true},
         {clef: "bass", keys: ["B/3"], duration: "h", cc: 59, w: true},
 
+        {clef: "treble", keys: ["C#/4"], duration: "h", cc: 61, w: false},
         {clef: "bass", keys: ["C#/3"], duration: "h", cc: 49, w: false},
+        {clef: "treble", keys: ["D#/4"], duration: "h", cc: 63, w: false},
         {clef: "bass", keys: ["D#/3"], duration: "h", cc: 51, w: false},
+        {clef: "treble", keys: ["F#/4"], duration: "h", cc: 66, w: false},
         {clef: "bass", keys: ["F#/3"], duration: "h", cc: 54, w: false},
+        {clef: "treble", keys: ["G#/4"], duration: "h", cc: 68, w: false},
         {clef: "bass", keys: ["G#/3"], duration: "h", cc: 56, w: false},
+        {clef: "treble", keys: ["A#/4"], duration: "h", cc: 70, w: false},
         {clef: "bass", keys: ["A#/3"], duration: "h", cc: 58, w: false},
 
+        {clef: "treble", keys: ["D@/4"], duration: "h", cc: 61, w: false},
         {clef: "bass", keys: ["D@/3"], duration: "h", cc: 49, w: false},
+        {clef: "treble", keys: ["E@/4"], duration: "h", cc: 63, w: false},
         {clef: "bass", keys: ["E@/3"], duration: "h", cc: 51, w: false},
+        {clef: "treble", keys: ["G@/4"], duration: "h", cc: 66, w: false},
         {clef: "bass", keys: ["G@/3"], duration: "h", cc: 54, w: false},
+        {clef: "treble", keys: ["A@/4"], duration: "h", cc: 68, w: false},
         {clef: "bass", keys: ["A@/3"], duration: "h", cc: 56, w: false},
+        {clef: "treble", keys: ["B@/4"], duration: "h", cc: 70, w: false},
         {clef: "bass", keys: ["B@/3"], duration: "h", cc: 58, w: false},
 
     ];
@@ -228,6 +226,20 @@ function setPlayQuestion(e) {
     }
 }
 
+function selectClef(e) {
+    console.log(e.value);
+    if (e.value == "bass") {
+        selectedClef = 1;
+    } else if (e.value == "treble") {
+        selectedClef = 0;
+    } else if (e.value == "both") {
+        selectedClef = 2;
+    }
+    loadQuestionHistory();
+    setTimeout(begin, 500);
+}
+
+
 /*
 TODO: test the midi range of the users keyboard
  */
@@ -258,12 +270,14 @@ function mutePiano() {
  */
 function playSample(note) {
     if (mute) return false;
+    if (note > 71 || note < 48) {
+        return false;
+    }
     if (stopSample(note)) {
         try {
             samples[note].play();
         } catch (err) {
             alert("There seems to be a problem with playing the audio. So I'm gonna mute it.")
-            mute = true;
             mutePiano();
             return false;
         }
@@ -417,12 +431,31 @@ function generateChord(nth) {
                 notes.push(vexNotes[i].keys[0].slice(0, vexNotes[i].keys[0].indexOf("/"))); //strip the octave marker
             }
         }
+
+
         if (notes.length > 4) {
             nth++;
             continue;
         }
 
         isaChord = true;
+
+        // filter out chords that are not in the selected clef
+        if (selectedClef == 1) {// bass
+            for (let i = 0; i < combo.length; i++) {
+                if (vexNotes[combo[i]].clef != "bass") {
+                    isaChord = false;
+                }
+            }
+        } else if (selectedClef == 0) { //treble
+            for (let i = 0; i < combo.length; i++) {
+                if (vexNotes[combo[i]].clef != "treble") {
+                    isaChord = false;
+                }
+            }
+        } // else use both clefs
+
+
         // filter out combinations that contain adjacent white keys
         for (let i = 0; i < filter.length && isaChord; i++) {
             for (let c = 0; c < notes.length && isaChord; c++) {
@@ -447,16 +480,14 @@ function generateChord(nth) {
             for (let a = 0; a < allChords.length && !found; a++) {
                 f = 0;
                 for (let c = 0; c < allChords[a].length && !found; c++) {
-                    found = false;
                     for (let i = 0; i < notes.length; i++) {
                         if (notes[i] == allChords[a][c]) {
                             f++;
                         }
                     }
-                    if (f == notes.length) {
-                        found = true;
-                        isaChord = true;
-                    }
+                }
+                if (f == notes.length) {
+                    isaChord = true;
                 }
             }
         }
@@ -466,7 +497,7 @@ function generateChord(nth) {
     for (let i = 0; i < combo.length; i++) {
         chord.push(vexNotes[combo[i]]);
     }
-    comboPtr = nth + 1;
+    globalNth = nth + 1;
     return chord;
 }
 
@@ -584,7 +615,7 @@ function recordAnswer(isCorrect) {
 
             // generate a new question to put at front of stack
             question = {c: [], r: 0};
-            question.c = generateChord(comboPtr);
+            question.c = generateChord(globalNth);
 
         } else {
             stack.splice(question.r, 0, question);
@@ -606,7 +637,7 @@ function initDatabase() {
     db = openDatabase('piano', '1.0', 'piano', 1000000);
 
     db.transaction(function (tx) {
-        tx.executeSql('CREATE TABLE IF NOT EXISTS questions ( nth INTEGER, json TEXT);', [],
+        tx.executeSql('CREATE TABLE IF NOT EXISTS questions ( nth INTEGER, clef INTEGER, json TEXT);', [],
             function (transaction, result) {
                 ;//console.log('create table: ');console.log(result);
             }, function (tx, err) {
@@ -616,9 +647,9 @@ function initDatabase() {
 
     // ensure that one record is present in the databse;
     db.transaction(function (tx) {
-        tx.executeSql('SELECT * FROM questions', [], function (tx, result) {
+        tx.executeSql('SELECT * FROM questions where clef=?', [selectedClef], function (tx, result) {
             if (result.rows.length == 0) {
-                tx.executeSql('INSERT INTO questions(nth,json) VALUES(?,?)', [1, "[]"],
+                tx.executeSql('INSERT INTO questions(nth,clef,json) VALUES(?,?,?)', [1, selectedClef, "[]"],
                     function (tx, result) {
                         console.log("inserted initial record");
                     }
@@ -646,7 +677,7 @@ function deleteQuestionHistory() {
     db.transaction(function (tx) {
         tx.executeSql('DELETE FROM questions', [],
             function (transaction, result) {
-                comboPtr = 1;
+                globalNth = 1;
                 stack = [];
             }
         );
@@ -655,8 +686,8 @@ function deleteQuestionHistory() {
 
 function updateQuestionHistory() {
     db.transaction(function (tx) {
-        tx.executeSql('UPDATE questions SET nth = ?,json = ?',
-            [comboPtr, JSON.stringify(stack)]);
+        tx.executeSql('UPDATE questions SET nth = ?,json = ? where clef=?',
+            [globalNth, JSON.stringify(stack), selectedClef]);
     }, function (tx, result) {
         ;//console.log("updateQuestionHistoryResult");
         ;//console.log(tx);
@@ -669,7 +700,7 @@ function updateQuestionHistory() {
 
 function loadQuestionHistory() {
     db.transaction(function (tx) {
-        tx.executeSql('SELECT * FROM questions', [], loadStack);
+        tx.executeSql('SELECT * FROM questions where clef=?', [selectedClef], loadStack);
     });
 }
 
@@ -679,7 +710,8 @@ function loadStack(transaction, result) {
     if (result.rows.length > 0) {
         try {
             stack = JSON.parse(result.rows[0].json);
-            comboPtr = result.rows[0].nth;
+            globalNth = result.rows[0].nth;
+            selectedClef = result.rows[0].clef;
         } catch (error) {
             console.log("Unable to load question history from database");
             console.log(error);
@@ -691,4 +723,3 @@ function loadStack(transaction, result) {
         ;// TODO: there are too many records, delete the smallest one
     }
 }
-
