@@ -25,6 +25,8 @@
     <button onclick="deleteQuestionHistory()">delete history</button>
 
     <div>
+        <input type="checkbox" id="show_q_letters" onChange="showQLetters(this)">
+        <label for="show_q_letters">Show question letters</label><br>
         <input type="checkbox" id="play_question" onChange="setPlayQuestion(this)">
         <label for="play_question">Play question notes</label>
         <div id='questionPlayDelayDiv' style="display:none">

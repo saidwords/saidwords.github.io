@@ -1,5 +1,5 @@
 var VF = null;
-var question = [];
+var question = {};
 var score = null;
 var system = null;
 var pianoRoll = null;
@@ -25,6 +25,7 @@ let questionPlayDelayLabel = {};
 let questionPlayDelayDiv = {};
 let questionPlayDelay = 0;
 let selectedClef = 0; // 0 = treble 1= bass, 3=both
+let showQuestionLetters = false;
 
 //TODO: Allow the user to select for practice the treble, bass or both at the same time
 function startUp() {
@@ -207,7 +208,9 @@ function about() {
 
 function begin() {
     // get a question and draw it on the stave
-    question = getQuestion();
+    if (typeof question.c == "undefined") {
+        question = getQuestion();
+    }
     drawNotes(question.c);
     playQuestionNotes(questionPlayDelay);
 }
@@ -226,8 +229,12 @@ function setPlayQuestion(e) {
     }
 }
 
+function showQLetters(e) {
+    showQuestionLetters = e.checked;
+    begin();
+}
+
 function selectClef(e) {
-    console.log(e.value);
     if (e.value == "bass") {
         selectedClef = 1;
     } else if (e.value == "treble") {
@@ -327,10 +334,8 @@ function getQuestion() {
     // pull the next question from the top of the stack.
     // if stack is empty then generate a question
     let q = {};
-
     if (stack.length == 0) {
-        chord = generateChord(1);
-        q = {c: chord, r: 0};
+        q = {c: generateChord(1), r: 0};
 
     } else {
         q = stack.splice(0, 1);
@@ -360,8 +365,10 @@ function drawNotes(notes) {
         for (let i in chord) {
             s += chord[i].keys[0] + " ";
 
+            let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
             if (keysDown.length > 0) {
                 let correct = false;
+
                 for (let k in keysDown) {
                     if (chord[i].cc - keysDown[k] == 0) {
                         correct = true;
@@ -370,16 +377,23 @@ function drawNotes(notes) {
 
                 // annotate note with name of note C#/4 etc...
                 if (correct) {
-                    let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
-                    s += " $.italic." + letter + (letter.length == 1 ? ' ' : '') + "$ ";
+                    s += " $.medium." + letter + (letter.length == 1 ? ' ' : '') + "$ ";
                 } else {
-                    s += "$  $"; //TODO: show the users keypress
+                    if (showQuestionLetters) {
+                        s += " $" + letter + (letter.length == 1 ? ' ' : '') + "$ ";
+                    } else {
+                        s += "$  $";
+                    }
                 }
             } else {
-                let letter = chord[i].keys[0].slice(0, chord[i].keys[0].indexOf("/")).replace("@", "b");
-                //s += " $" + letter + (letter.length == 1 ? ' ' : '') + "$ ";// show the question letter
-                s += "$  $";
+                if (showQuestionLetters) {
+                    s += " $" + letter + (letter.length == 1 ? ' ' : '') + "$ ";
+                } else {
+                    s += "$  $";
+                }
+
             }
+
         }
 
         return s;
