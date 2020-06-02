@@ -335,7 +335,7 @@ function getQuestion() {
     // if stack is empty then generate a question
     let q = {};
     if (stack.length == 0) {
-        q = {c: generateChord(1), r: 0};
+        q = {c: generateChord(1), r: 0, a: 0, b: 0};
 
     } else {
         q = stack.splice(0, 1);
@@ -442,7 +442,7 @@ function generateChord(nth) {
         for (let i = 0; i < vexNotes.length; i++) {
             if ((nth & 2 ** i) > 0) {
                 combo.push(i);
-                notes.push(vexNotes[i].keys[0].slice(0, vexNotes[i].keys[0].indexOf("/"))); //strip the octave marker
+                //notes.push(vexNotes[i].keys[0].slice(0, vexNotes[i].keys[0].indexOf("/"))); //strip the octave marker
             }
         }
 
@@ -469,20 +469,25 @@ function generateChord(nth) {
             }
         } // else use both clefs
 
+        if (isaChord) {
+		for(let i=0;i<combo.length;i++){
+			notes.push(vexNotes[combo[i]].keys[0].slice(0, vexNotes[combo[i]].keys[0].indexOf("/"))); //strip the octave marker
+		}
 
-        // filter out combinations that contain adjacent white keys
-        for (let i = 0; i < filter.length && isaChord; i++) {
-            for (let c = 0; c < notes.length && isaChord; c++) {
-                if (notes[c] == filter[i][0]) {
-                    for (let c2 = 0; c2 < notes.length; c2++) {
-                        if (notes[c2] == filter[i][1]) {
-                            isaChord = false;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+		// filter out combinations that contain adjacent white keys
+		for (let i = 0; i < filter.length && isaChord; i++) {
+		    for (let c = 0; c < notes.length && isaChord; c++) {
+			if (notes[c] == filter[i][0]) {
+			    for (let c2 = 0; c2 < notes.length; c2++) {
+				if (notes[c2] == filter[i][1]) {
+				    isaChord = false;
+				    break;
+				}
+			    }
+			}
+		    }
+		}
+	}
 
         /*
         filter out combinations that are not part of any chord
@@ -505,6 +510,7 @@ function generateChord(nth) {
                 }
             }
         }
+
         if (!isaChord) nth++;
     }
 
@@ -615,9 +621,14 @@ function noteOff(note) {
 
 function recordAnswer(isCorrect) {
 
+    question.a++; // how many times the question has been asked
+
     // if correct then move the question farther to the bottom of the stack
     if (isCorrect) {
-        question.r = Math.floor((question.r + 1) * 1.618); // calculate a new rank
+        question.b += 1.333; // how many times the question was answered correctly.
+
+        // calculate a new rank
+        question.r = 1 + (question.r * (1 + (question.b / question.a)));
 
         /*
         if the new rank of the question causes the question to
@@ -628,18 +639,22 @@ function recordAnswer(isCorrect) {
             stack.push(question);
 
             // generate a new question to put at front of stack
-            question = {c: [], r: 0};
+            question = {c: [], r: 1, a: 0, b: 0};
             question.c = generateChord(globalNth);
 
         } else {
-            stack.splice(question.r, 0, question);
+            stack.splice(Math.floor(question.r), 0, question);
             question = getQuestion();
         }
 
     } else {
         // reset the questions rank.
         // but dont put back in the stack til they answer it correctly
-        question.r = 0;
+        question.r = 1;
+    }
+
+    if (question.b > question.a) {
+        question.b = question.a;
     }
 
     updateQuestionHistory();
