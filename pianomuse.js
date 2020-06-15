@@ -5,7 +5,8 @@ var system = null;
 var pianoRoll = null;
 var stack = []; // holds the list of asked questions and their rank
 var midiMap = {};
-var keysDown = []; // all the keys that the user is currently holding down on the keyboard
+var keysDown = []; // all the keys that the user is currently holding down on
+					// the keyboard
 var artist = null;
 var tab = null;
 var renderer = null;
@@ -18,16 +19,20 @@ let globalNth = 1;
 let mute = false;
 let muteButton = {};
 let messageBox = {};
-let playQuestion = false; // if true the play the sound of the piano notes that make up the question
+let playQuestion = false; // if true the play the sound of the piano notes
+							// that make up the question
 let procId = null;
 let questionPlayDelaySlider = {};
 let questionPlayDelayLabel = {};
 let questionPlayDelayDiv = {};
 let questionPlayDelay = 0;
-let selectedClef = 0; // 0 = treble 1= bass, 3=both
+let selectedClef = 0; // 0 = treble 1= bass, 2=both
+let alternatingClef=0;
 let showQuestionLetters = false;
+let filterOut=[5];
 
-//TODO: Allow the user to select for practice the treble, bass or both at the same time
+// TODO: Allow the user to select for practice the treble, bass or both at the
+// same time
 function startUp() {
     pianoRoll = document.getElementById("pianoRoll");
     muteButton = document.getElementById("muteButton");
@@ -46,17 +51,104 @@ function startUp() {
     debug = document.getElementById("debug");
     VF = Vex.Flow;
     renderer = new VF.Renderer(pianoRoll, VF.Renderer.Backends.SVG);
-    //renderer.ctx.setFillStyle("green"); //this works!
+    // renderer.ctx.setFillStyle("green"); //this works!
 
     initDatabase();
     loadQuestionHistory()
-
+    
     // https://www.piano-keyboard-guide.com/keyboard-chords.html
     allChords = [
-        ["C", "E", "G"],
+    	['C'],['D'],['E'],['F'],['G'],['A'],['B'],
+    	['C#'],['D#'],['D@'],['E@'],['F#'],['G#'],
+    	['A#'],['A@'],['B@'],['G@'],
+    	["C","E"],
+    	["C","E@"],
+    	["C#","E"],
+    	["C","F"],
+    	["C","F#"],
+    	["C#","F"],
+    	["C#","F#"],
+    	["C","G"],
+    	["C","G@"],
+    	["C","G#"],
+    	["C#","G"],
+    	["C#","G#"],
+    	["C","C#"],
+    	["C#","D"],
+    	["D","E@"],
+    	["D@","E"],
+    	["D@","E@"],
+    	["D#","E"],
+    	["D","F"],
+    	["D","F#"],
+    	["D@","F"],
+    	["D#","F#"],
+    	["D","G"],
+    	["D","G@"],
+    	["D","G#"],
+    	["D@","G"],
+    	["D@","G@"],
+    	["D#","G#"],
+    	["E","F#"],
+    	["E@","F"],
+    	["E","G"],
+    	["E","G#"],
+    	["E@","G"],
+    	["E@","G@"],
+    	["F","F#"],
+    	["F","G#"],
+    	["F#","G"],
+    	["A","B@"],
+    	["A@","B"],
+    	["A@","B@"],
+    	["A#","B"],
+    	["A","C"],
+    	["A","C#"],
+    	["A@","C"],
+    	["A#","C#"],
+    	["A","D"],
+    	["A","D@"],
+    	["A","D#"],
+    	["A@","D"],
+    	["A@","D@"],
+    	["A#","D#"],
+    	["A","E"],
+    	["A","E@"],
+    	["A@","E"],
+    	["A@","E@"],
+    	["A#","E"],
+    	["A","F"],
+    	["A","F#"],
+    	["A@","F"],
+    	["A#","F"],
+    	["A#","F#"],
+    	["A","G@"],
+    	["A","G#"],
+    	["A@","G"],
+    	["A@","G@"],
+    	["B","C#"],
+    	["B@","C"],
+    	["B","D"],
+    	["B","D#"],
+    	["B@","D"],
+    	["B@","D@"],
+    	["B","E"],
+    	["B","E@"],
+    	["B@","E"],
+    	["B@","E@"],
+    	["B","F"],
+    	["B","F#"],
+    	["B@","F"],
+    	["B","G"],
+    	["B","G@"],
+    	["B","G#"],
+    	["B@","G"],
+    	["B@","G@"],
+    	["F#","G#"],
+    	["C", "E", "G"],
         ["C#", "F", "G#"],
         ["D", "F#", "G#"],
-        ["E@", "G", "b@"],
+        ["E@", "G", "B@"],
         ["B", "E", "G#"],
         ["A", "C", "F"],
         ["A#", "C#", "F#"],
@@ -141,8 +233,7 @@ function startUp() {
 
     // A list of all piano keys that will be practiced in order of appearance
     vexNotes = [
-
-        {clef: "treble", keys: ["C/4"], duration: "h", cc: 60, w: true}, //middle-C
+        {clef: "treble", keys: ["C/4"], duration: "h", cc: 60, w: true}, // middle-C
         {clef: "bass", keys: ["C/3"], duration: "h", cc: 48, w: true},
         {clef: "treble", keys: ["D/4"], duration: "h", cc: 62, w: true},
         {clef: "bass", keys: ["D/3"], duration: "h", cc: 50, w: true},
@@ -180,19 +271,47 @@ function startUp() {
         {clef: "bass", keys: ["B@/3"], duration: "h", cc: 58, w: false},
 
     ];
-
-
+    
+    
+ 
     // load notes
     for (let i in vexNotes) {
         midiMap[vexNotes[i].cc] = vexNotes[i];
 
-        //TODO: handle the case when the sample cannot be found
+        // TODO: handle the case when the sample cannot be found
         samples[vexNotes[i].cc] = new Audio("./samples/Piano" + vexNotes[i].cc + ".wav");
     }
 
     // draw a blank sheet
     drawNotes([]);
 }
+
+function testSomething(){
+	let chords=[];
+	
+	for(let i=0;i<allChords.length;i++){
+	
+		for(let i1=0;i1<allChords[i].length;i1++){
+			
+			for(let j1=0;j1<allChords[i].length;j1++){
+				
+				if(i1!=j1){
+					chords.push([
+						allChords[i][i1],
+						allChords[i][j1]
+					]);
+					chords[chords.length-1].sort();
+				}
+					
+			}
+			
+		}
+	
+	}
+	
+console.log(JSON.stringify(chords));
+}
+
 
 function about() {
     if (messageBox.innerHTML.length > 2) {
@@ -235,6 +354,7 @@ function showQLetters(e) {
 }
 
 function selectClef(e) {
+	question={};
     if (e.value == "bass") {
         selectedClef = 1;
     } else if (e.value == "treble") {
@@ -243,12 +363,13 @@ function selectClef(e) {
         selectedClef = 2;
     }
     loadQuestionHistory();
+   
     setTimeout(begin, 500);
 }
 
 
 /*
-TODO: test the midi range of the users keyboard
+ * TODO: test the midi range of the users keyboard
  */
 function calibrate() {
     if (calibrating) {
@@ -273,6 +394,7 @@ function mutePiano() {
 
 /**
  * TODO figure out how to avoid that clicking sound when note is retriggered
+ * 
  * @param note
  */
 function playSample(note) {
@@ -324,29 +446,34 @@ function stopSample(note) {
 }
 
 /*
-Returns a question in the form of
-    {
-        c:[]  Chord - an array of vexNote definitions
-        r: int Rank - a value indicating how well the question has been memorized
-    }
-*/
+ * Returns a question in the form of { c:[] Chord - an array of vexNote
+ * definitions r: int Rank - a value indicating how well the question has been
+ * memorized }
+ */
 function getQuestion() {
     // pull the next question from the top of the stack.
     // if stack is empty then generate a question
     let q = {};
     if (stack.length == 0) {
-        q = {c: generateChord(1), r: 0, a: 0, b: 0};
+        q = {c: generateChord(0), r: 0, a: 0, b: 0};
 
     } else {
         q = stack.splice(0, 1);
-        return q[0];
+        q=q[0];
+        //rotate the notes in the chord to keep things interesting
+        if(q.c.length>1){
+        	let c=q.c.splice(0,1);
+        	q.c.push(c[0]);
+        }
     }
+    q.a++; // increment the number of times this question has been asked
+    
     return q;
 }
 
 /*
-notes - an array of midi values that represent notes
-*/
+ * notes - an array of midi values that represent notes
+ */
 function drawNotes(notes) {
     var basschord = [];
     var treblechord = [];
@@ -407,7 +534,8 @@ function drawNotes(notes) {
 			tabstave notation=true tablature=false clef=bass
 			` + formatNotes(basschord);
 
-    // options reference here: https://github.com/0xfe/vextab/blob/master/src/vextab.coffee
+    // options reference here:
+	// https://github.com/0xfe/vextab/blob/master/src/vextab.coffee
     const artist = new vextab.Artist(10, 10, 750, {scale: 1.25});
     const tab = new vextab.VexTab(artist);
 
@@ -415,110 +543,40 @@ function drawNotes(notes) {
     artist.render(renderer);
 }
 
-/**
- * Returns the nth iteration of all possible combinations of notes
- *
- * @param nth
- * @returns {[]} an array of notes
- */
-function generateChord(nth) {
-    let combo = [];
-    let chord = [];
-    let isaChord = false;
-
-    let filter = [
-        ["A", "B"],
-        ["A", "G"],
-        ["B", "C"],
-        ["C", "D"],
-        ["D", "E"],
-        ["E", "F"],
-        ["F", "G"]
-    ];
-
-    while (!isaChord && nth < Number.MAX_SAFE_INTEGER - 5) {
-        combo = [];
-        let notes = [];
-        for (let i = 0; i < vexNotes.length; i++) {
-            if ((nth & 2 ** i) > 0) {
-                combo.push(i);
-                //notes.push(vexNotes[i].keys[0].slice(0, vexNotes[i].keys[0].indexOf("/"))); //strip the octave marker
-            }
-        }
-
-
-        if (notes.length > 4) {
-            nth++;
-            continue;
-        }
-
-        isaChord = true;
-
-        // filter out chords that are not in the selected clef
-        if (selectedClef == 1) {// bass
-            for (let i = 0; i < combo.length; i++) {
-                if (vexNotes[combo[i]].clef != "bass") {
-                    isaChord = false;
-                }
-            }
-        } else if (selectedClef == 0) { //treble
-            for (let i = 0; i < combo.length; i++) {
-                if (vexNotes[combo[i]].clef != "treble") {
-                    isaChord = false;
-                }
-            }
-        } // else use both clefs
-
-        if (isaChord) {
-		for(let i=0;i<combo.length;i++){
-			notes.push(vexNotes[combo[i]].keys[0].slice(0, vexNotes[combo[i]].keys[0].indexOf("/"))); //strip the octave marker
-		}
-
-		// filter out combinations that contain adjacent white keys
-		for (let i = 0; i < filter.length && isaChord; i++) {
-		    for (let c = 0; c < notes.length && isaChord; c++) {
-			if (notes[c] == filter[i][0]) {
-			    for (let c2 = 0; c2 < notes.length; c2++) {
-				if (notes[c2] == filter[i][1]) {
-				    isaChord = false;
-				    break;
+function generateChord(nth){
+	let chord=allChords[nth];
+	let vexChord=[];
+	let clef=selectedClef;
+	
+	if(selectedClef==2){
+		clef=alternatingClef;
+	}
+	
+	
+	// convert the chord to vexnotes
+	for(let n = 0;n<chord.length;n++){
+		// for note in chord find the equivalent vexnote
+		for(let v = 0;v<vexNotes.length;v++){
+			let note=vexNotes[v].keys[0].slice(0, vexNotes[v].keys[0].indexOf("/"));
+			if(note==chord[n]){
+				if(clef==0){ // treble
+					if(vexNotes[v].clef=='treble'){
+						vexChord.push(vexNotes[v]);
+					}
+				}else if(clef==1){ // bass
+					if(vexNotes[v].clef=='bass'){
+						vexChord.push(vexNotes[v]);
+					}
 				}
-			    }
 			}
-		    }
+		}
+		if(selectedClef==2){
+			clef=!clef;
+			alternatingClef=clef;
 		}
 	}
-
-        /*
-        filter out combinations that are not part of any chord
-        */
-        if (isaChord) {
-            let f = 0;
-            isaChord = false;
-            let found = false;
-            for (let a = 0; a < allChords.length && !found; a++) {
-                f = 0;
-                for (let c = 0; c < allChords[a].length && !found; c++) {
-                    for (let i = 0; i < notes.length; i++) {
-                        if (notes[i] == allChords[a][c]) {
-                            f++;
-                        }
-                    }
-                }
-                if (f == notes.length) {
-                    isaChord = true;
-                }
-            }
-        }
-
-        if (!isaChord) nth++;
-    }
-
-    for (let i = 0; i < combo.length; i++) {
-        chord.push(vexNotes[combo[i]]);
-    }
-    globalNth = nth + 1;
-    return chord;
+	
+	return vexChord;
 }
 
 function getMIDIMessage(midiMessage) {
@@ -585,7 +643,8 @@ function noteOn(note, velocity) {
     drawNotes(questionNotes);
 
     // determine if the pressed keys matches the question.
-    if (keysDown.length != question.c.length) { // dont check unless ALL notes are pressed
+    if (keysDown.length != question.c.length) { // dont check unless ALL notes
+												// are pressed
         return;
     } else {
         keysDown.sort();
@@ -621,26 +680,24 @@ function noteOff(note) {
 
 function recordAnswer(isCorrect) {
 
-    question.a++; // how many times the question has been asked
-
     // if correct then move the question farther to the bottom of the stack
     if (isCorrect) {
-        question.b += 1.333; // how many times the question was answered correctly.
-
+       
         // calculate a new rank
-        question.r = 1 + (question.r * (1 + (question.b / question.a)));
-
+    	question.r += (question.a/(question.b+1));       
+        
         /*
-        if the new rank of the question causes the question to
-        be put at the bottom of the stack, then do so and
-        generate a new question
-        */
-        if (question.r > stack.length) {
+		 * if the new rank of the question causes the question to be put at the
+		 * bottom of the stack, then do so and generate a new question
+		 */
+        if (question.r > stack.length &&(globalNth<allChords.length) ) {
             stack.push(question);
 
             // generate a new question to put at front of stack
-            question = {c: [], r: 1, a: 0, b: 0};
+            question = {c: [], r: 1, a: 1, b: 0};
             question.c = generateChord(globalNth);
+            
+        	globalNth++;    
 
         } else {
             stack.splice(Math.floor(question.r), 0, question);
@@ -648,15 +705,13 @@ function recordAnswer(isCorrect) {
         }
 
     } else {
+    	question.b+=1.2; // how many times the question was answered wrong
         // reset the questions rank.
         // but dont put back in the stack til they answer it correctly
         question.r = 1;
     }
 
-    if (question.b > question.a) {
-        question.b = question.a;
-    }
-
+   
     updateQuestionHistory();
 }
 
@@ -668,26 +723,28 @@ function initDatabase() {
     db.transaction(function (tx) {
         tx.executeSql('CREATE TABLE IF NOT EXISTS questions ( nth INTEGER, clef INTEGER, json TEXT);', [],
             function (transaction, result) {
-                ;//console.log('create table: ');console.log(result);
+                ;// console.log('create table: ');console.log(result);
             }, function (tx, err) {
                 console.log(err);
             });
     });
 
-    // ensure that one record is present in the databse;
+    // ensure that one record for each clef is present in the databse;
     db.transaction(function (tx) {
-        tx.executeSql('SELECT * FROM questions where clef=?', [selectedClef], function (tx, result) {
+    	for(let clef=0;clef<3;clef++){
+    	tx.executeSql('SELECT * FROM questions where clef=?', [selectedClef], function (tx, result) {
             if (result.rows.length == 0) {
-                tx.executeSql('INSERT INTO questions(nth,clef,json) VALUES(?,?,?)', [1, selectedClef, "[]"],
+                tx.executeSql('INSERT INTO questions(nth,clef,json) VALUES(?,?,?)', [1, clef, "[]"],
                     function (tx, result) {
                         console.log("inserted initial record");
                     }
                 );
             }
         });
+    	}
     });
 
-    //TODO: dedupe database just in case
+    // TODO: dedupe database just in case
 }
 
 function dropTable() {
@@ -718,11 +775,11 @@ function updateQuestionHistory() {
         tx.executeSql('UPDATE questions SET nth = ?,json = ? where clef=?',
             [globalNth, JSON.stringify(stack), selectedClef]);
     }, function (tx, result) {
-        ;//console.log("updateQuestionHistoryResult");
-        ;//console.log(tx);
+        ;// console.log("updateQuestionHistoryResult");
+        ;// console.log(tx);
     }, function (err, foo) {
-        ;//console.log("update question history error?");
-        ;//console.log(err);
+        ;// console.log("update question history error?");
+        ;// console.log(err);
     });
 }
 
