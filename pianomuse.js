@@ -26,6 +26,12 @@ let questionPlayDelaySlider = {};
 let questionPlayDelayLabel = {};
 let questionPlayDelayDiv = {};
 let questionPlayDelay = 0;
+
+let questionPlayNoteDelaySlider = {};
+let questionPlayNoteDelayLabel = {};
+let questionPlayNoteDelayDiv = {};
+let questionPlayNoteDelay = 0;
+
 let selectedClef = 0; // 0 = treble 1= bass, 2=both
 let alternatingClef=0;
 let showQuestionLetters = false;
@@ -37,17 +43,39 @@ function startUp() {
     pianoRoll = document.getElementById("pianoRoll");
     muteButton = document.getElementById("muteButton");
     messageBox = document.getElementById("message");
+   
+    // question play delay
     questionPlayDelayDiv = document.getElementById("questionPlayDelayDiv");
     questionPlayDelayLabel = document.getElementById('questionPlayDelayLabel');
     questionPlayDelaySlider = document.getElementById("questionPlayDelay");
+    
     questionPlayDelaySlider.oninput = function () {
         if (this.value > 0) {
             questionPlayDelayLabel.innerHTML = "after " + (this.value / 1000) + " seconds";
             questionPlayDelay = this.value;
+            
         } else {
             questionPlayDelayLabel.innerHTML = "";
         }
     }
+    
+ // question play note delay
+    questionPlayNoteDelayDiv = document.getElementById("questionPlayNoteDelayDiv");
+    questionPlayNoteDelayLabel = document.getElementById('questionPlayNoteDelayLabel');
+    questionPlayNoteDelaySlider = document.getElementById("questionPlayNoteDelay");
+    
+    questionPlayNoteDelaySlider.oninput = function () {
+        if (this.value > 0) {
+            questionPlayNoteDelayLabel.innerHTML = "with " + (this.value / 1000) + " seconds between notes";
+            questionPlayNoteDelay = this.value;
+            
+        } else {
+            questionPlayNoteDelayLabel.innerHTML = "";
+        }
+    }
+    
+    
+    
     debug = document.getElementById("debug");
     VF = Vex.Flow;
     renderer = new VF.Renderer(pianoRoll, VF.Renderer.Backends.SVG);
@@ -272,8 +300,6 @@ function startUp() {
 
     ];
     
-    
- 
     // load notes
     for (let i in vexNotes) {
         midiMap[vexNotes[i].cc] = vexNotes[i];
@@ -287,29 +313,6 @@ function startUp() {
 }
 
 function testSomething(){
-	let chords=[];
-	
-	for(let i=0;i<allChords.length;i++){
-	
-		for(let i1=0;i1<allChords[i].length;i1++){
-			
-			for(let j1=0;j1<allChords[i].length;j1++){
-				
-				if(i1!=j1){
-					chords.push([
-						allChords[i][i1],
-						allChords[i][j1]
-					]);
-					chords[chords.length-1].sort();
-				}
-					
-			}
-			
-		}
-	
-	}
-	
-console.log(JSON.stringify(chords));
 }
 
 
@@ -331,7 +334,10 @@ function begin() {
         question = getQuestion();
     }
     drawNotes(question.c);
-    playQuestionNotes(questionPlayDelay);
+    playQuestionNotes(questionPlayDelay,questionPlayNoteDelay);
+   
+	messageBox.innerHTML="";
+	
 }
 
 function setPlayQuestion(e) {
@@ -343,8 +349,17 @@ function setPlayQuestion(e) {
             questionPlayDelay = 1000;
             questionPlayDelaySlider.oninput();
         }
+        /*
+        questionPlayNoteDelayDiv.style = "";
+        if (questionPlayNoteDelay == 0) {
+            questionPlayNoteDelaySlider.value = 500;
+            questionPlayNoteDelay = 500;
+            questionPlayNoteDelaySlider.oninput();
+        }
+        */
     } else {
         questionPlayDelayDiv.style = "display:none";
+        questionPlayNoteDelayDiv.style = "display:none";
     }
 }
 
@@ -397,14 +412,20 @@ function mutePiano() {
  * 
  * @param note
  */
-function playSample(note) {
+function playSample(note,delay) {
     if (mute) return false;
     if (note > 71 || note < 48) {
         return false;
     }
     if (stopSample(note)) {
         try {
-            samples[note].play();
+        	if(typeof delay =='undefined'){
+        		samples[note].play();
+        	}else{
+            	setTimeout(function(){
+            		samples[note].play();
+    			}, delay);	
+        	}
         } catch (err) {
             alert("There seems to be a problem with playing the audio. So I'm gonna mute it.")
             mutePiano();
@@ -416,17 +437,18 @@ function playSample(note) {
 }
 
 
-function playQuestionNotes(delay) {
+function playQuestionNotes(delay,noteDelay) {
+	
     if (!playQuestion) return;
     if (procId !== null) {
         return;
     }
-    // TODO: only play if there are no keys down and some time has passed
+    //only play if there are no keys down and some time has passed
     procId = setTimeout(function () {
         procId = null;
         if (keysDown.length > 0) return;
         for (let n = 0; n < question.c.length; n++) {
-            playSample(question.c[n].cc);
+        	playSample(question.c[n].cc,noteDelay);
         }
 
     }, delay);
@@ -620,8 +642,8 @@ function noteOn(note, velocity) {
     let isPressed = false;
     let isCorrect = true;
     let questionNotes = [];
-
-    // add the pressed key to the list of pressed keys
+    
+   // add the pressed key to the list of pressed keys
     for (var i = 0; i < keysDown.length; i++) {
         if (keysDown[i] == note) {
             isPressed = true;
@@ -647,16 +669,12 @@ function noteOn(note, velocity) {
 												// are pressed
         return;
     } else {
-        keysDown.sort();
-        question.c.sort();
-
+    	
+    	isCorrect=true;
         for (let i = 0; i < keysDown.length; i++) {
-            isCorrect = false;
-            for (let k = 0; k < question.c.length; k++) {
-                if (keysDown[i] == question.c[k].cc) {
-                    isCorrect = true;
-                    break;
-                }
+            if (keysDown[i] != question.c[i].cc) {
+                isCorrect = false;
+                break;
             }
             if (!isCorrect) break;
         }

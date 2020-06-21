@@ -18,7 +18,7 @@
 <body onLoad="startUp()" bgColor="#dcdcdc">
 <center>
     <div id='pianoRoll'></div>
-    <div id='message'></div>
+    <div id='message'>Press start. Then press and hold the keys on your keyboard in the same order that the notes appear on the stave</div>
     <button onclick="begin()">Start</button>
     <button id='muteButton' onclick="mutePiano()">Mute</button>
     <button onclick="about()">about</button>
@@ -32,6 +32,11 @@
         <div id='questionPlayDelayDiv' style="display:none">
             <input type="range" min="0" max="2000" value="0" class="slider" id="questionPlayDelay">
             <label id="questionPlayDelayLabel" for="questionPlayDelay"></label>
+        </div>
+       
+        <div id='questionPlayNoteDelayDiv' style="display:none">
+            <input type="range" min="0" max="2000" value="0" class="slider" id="questionPlayNoteDelay">
+            <label id="questionPlayNoteDelayLabel" for="questionPlayNoteDelay"></label>
         </div>
         <br>
         <div>
