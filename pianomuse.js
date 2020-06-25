@@ -36,6 +36,9 @@ let selectedClef = 0; // 0 = treble 1= bass, 2=both
 let alternatingClef=0;
 let showQuestionLetters = false;
 let filterOut=[5];
+let midiChannels={};
+let midiCommands=[];
+let midiChannel=1;
 
 // TODO: Allow the user to select for practice the treble, bass or both at the
 // same time
@@ -53,10 +56,10 @@ function startUp() {
         if (this.value > 0) {
             questionPlayDelayLabel.innerHTML = "after " + (this.value / 1000) + " seconds";
             questionPlayDelay = this.value;
-            
-        } else {
-            questionPlayDelayLabel.innerHTML = "";
-        }
+            if(this.value<0.1){
+            	questionPlayNoteDelay=0;
+            }
+        } 
     }
     
  // question play note delay
@@ -68,13 +71,11 @@ function startUp() {
         if (this.value > 0) {
             questionPlayNoteDelayLabel.innerHTML = "with " + (this.value / 1000) + " seconds between notes";
             questionPlayNoteDelay = this.value;
-            
-        } else {
-            questionPlayNoteDelayLabel.innerHTML = "";
+            if(this.value<0.1){
+            	questionPlayNoteDelay=0;
+            }
         }
     }
-    
-    
     
     debug = document.getElementById("debug");
     VF = Vex.Flow;
@@ -84,131 +85,57 @@ function startUp() {
     initDatabase();
     loadQuestionHistory()
     
+    let command=128;
+    for(let i=0;i<2;i++){
+    	midiCommands[i]=[0];
+    	for(let channel=1;channel<17;channel++){
+    		midiChannels[command]=channel;
+    		midiCommands[i][channel]=command;
+    		command++;
+    	}
+    }
+    
     // https://www.piano-keyboard-guide.com/keyboard-chords.html
     allChords = [
     	['C'],['D'],['E'],['F'],['G'],['A'],['B'],
     	['C#'],['D#'],['D@'],['E@'],['F#'],['G#'],
     	['A#'],['A@'],['B@'],['G@'],
-    	["C","E"],
-    	["C","E@"],
-    	["C#","E"],
-    	["C","F"],
-    	["C","F#"],
-    	["C#","F"],
-    	["C#","F#"],
-    	["C","G"],
-    	["C","G@"],
-    	["C","G#"],
-    	["C#","G"],
-    	["C#","G#"],
-    	["C","C#"],
-    	["C#","D"],
-    	["D","E@"],
-    	["D@","E"],
-    	["D@","E@"],
-    	["D#","E"],
-    	["D","F"],
-    	["D","F#"],
-    	["D@","F"],
-    	["D#","F#"],
-    	["D","G"],
-    	["D","G@"],
-    	["D","G#"],
-    	["D@","G"],
-    	["D@","G@"],
-    	["D#","G#"],
-    	["E","F#"],
-    	["E@","F"],
-    	["E","G"],
-    	["E","G#"],
-    	["E@","G"],
-    	["E@","G@"],
-    	["F","F#"],
-    	["F","G#"],
-    	["F#","G"],
-    	["A","B@"],
-    	["A@","B"],
-    	["A@","B@"],
-    	["A#","B"],
-    	["A","C"],
-    	["A","C#"],
-    	["A@","C"],
-    	["A#","C#"],
-    	["A","D"],
-    	["A","D@"],
-    	["A","D#"],
-    	["A@","D"],
-    	["A@","D@"],
-    	["A#","D#"],
-    	["A","E"],
-    	["A","E@"],
-    	["A@","E"],
-    	["A@","E@"],
-    	["A#","E"],
-    	["A","F"],
-    	["A","F#"],
-    	["A@","F"],
-    	["A#","F"],
-    	["A#","F#"],
-    	["A","G@"],
-    	["A","G#"],
-    	["A@","G"],
-    	["A@","G@"],
-    	["B","C#"],
-    	["B@","C"],
-    	["B","D"],
-    	["B","D#"],
-    	["B@","D"],
-    	["B@","D@"],
-    	["B","E"],
-    	["B","E@"],
-    	["B@","E"],
-    	["B@","E@"],
-    	["B","F"],
-    	["B","F#"],
-    	["B@","F"],
-    	["B","G"],
-    	["B","G@"],
-    	["B","G#"],
-    	["B@","G"],
-    	["B@","G@"],
-    	["F#","G#"],
     	["C", "E", "G"],
-        ["C#", "F", "G#"],
-        ["D", "F#", "G#"],
-        ["E@", "G", "B@"],
-        ["B", "E", "G#"],
-        ["A", "C", "F"],
-        ["A#", "C#", "F#"],
-        ["B", "D", "G"],
-        ["A@", "C", "E@"],
-        ["A", "C#", "E"],
-        ["B@", "D", "F"],
-        ["B", "D#", "F#"],
-        ["C", "E@", "G"],
-        ["C#", "E", "G#"],
-        ["A", "D", "F"],
-        ["B@", "E@", "G@"],
-        ["B", "E", "G"],
-        ["A@", "C", "F"],
-        ["A", "C#", "F#"],
-        ["B@", "D", "G"],
-        ["A@", "B", "E@"],
-        ["A", "C", "E"],
-        ["B@", "D@", "F"],
-        ["B", "D", "F#"],
-        ["C", "E@", "G@"],
-        ["C#", "E", "G"],
-        ["A@", "D", "F"],
-        ["A", "E@", "G@"],
-        ["B@", "E", "G"],
-        ["A@", "B", "F"],
-        ["A", "C", "F#"],
-        ["B@", "D@", "G"],
+    	["A", "C", "F"],
+    	["B", "D", "G"],
+    	["A", "C", "E"],
+    	["B", "D", "F"],
+    	["A", "D", "F"],
+    	["B", "E", "G"],
+    	["B", "E", "G#"],
+    	["B@", "D", "F"],
+    	["A", "C#", "E"],
+    	["A@", "C", "F"],
+    	["B", "D", "F#"],
+    	["C", "E@", "G"],
+    	["C#", "E", "G"], 
+    	["B@", "D", "G"],
+    	["A", "C", "F#"],
+    	["A@", "D", "F"],
+    	["B@", "D@", "G"],
         ["A@", "B", "D"],
         ["A", "C", "E@"],
+    	["B@", "E", "G"],
+        ["A@", "B", "F"],
+        ["C#", "F", "G#"],
+        ["E@", "G", "B@"],
+        ["D", "F#", "G#"],
+        ["A@", "C", "E@"],
+        ["A#", "C#", "F#"],
+        ["B@", "E@", "G@"],
+        ["B", "D#", "F#"],
+        ["A@", "B", "E@"],
+        ["C#", "E", "G#"],
+        ["B@", "D@", "F"],
+        ["A", "C#", "F#"],
+        ["C", "E@", "G@"],
+        ["A", "E@", "G@"],
         ["B@", "D@", "E"],
-        ["B", "D", "F"],
         ["B", "C", "E", "G"],
         ["C", "C#", "F", "G#"],
         ["A", "C#", "D", "F#"],
@@ -349,14 +276,14 @@ function setPlayQuestion(e) {
             questionPlayDelay = 1000;
             questionPlayDelaySlider.oninput();
         }
-        /*
+        
         questionPlayNoteDelayDiv.style = "";
         if (questionPlayNoteDelay == 0) {
             questionPlayNoteDelaySlider.value = 500;
             questionPlayNoteDelay = 500;
             questionPlayNoteDelaySlider.oninput();
         }
-        */
+        
     } else {
         questionPlayDelayDiv.style = "display:none";
         questionPlayNoteDelayDiv.style = "display:none";
@@ -412,20 +339,14 @@ function mutePiano() {
  * 
  * @param note
  */
-function playSample(note,delay) {
+function playSample(note) {
     if (mute) return false;
     if (note > 71 || note < 48) {
         return false;
     }
     if (stopSample(note)) {
         try {
-        	if(typeof delay =='undefined'){
-        		samples[note].play();
-        	}else{
-            	setTimeout(function(){
-            		samples[note].play();
-    			}, delay);	
-        	}
+        	samples[note].play();
         } catch (err) {
             alert("There seems to be a problem with playing the audio. So I'm gonna mute it.")
             mutePiano();
@@ -437,21 +358,34 @@ function playSample(note,delay) {
 }
 
 
-function playQuestionNotes(delay,noteDelay) {
+function playQuestionNotes(delay,intermission) {
 	
     if (!playQuestion) return;
     if (procId !== null) {
         return;
     }
-    //only play if there are no keys down and some time has passed
-    procId = setTimeout(function () {
-        procId = null;
-        if (keysDown.length > 0) return;
-        for (let n = 0; n < question.c.length; n++) {
-        	playSample(question.c[n].cc,noteDelay);
-        }
+    // only play if there are no keys down and some time has passed
+    if(parseInt(intermission) > 101){
+    	let i = parseInt(intermission);
+    	for (let n = 0; n < question.c.length; n++) {
+    		procId = setTimeout(() => {
+    			procId=null;
+    			if (keysDown.length > 0) return;
+    			playSample(question.c[n].cc);
+			}, parseInt(delay)+i);
+    		i+=parseInt(intermission);
+    	}
+    }else{
+    	
+    	 procId = setTimeout(function () {
+    		 procId=null;
+    	        if (keysDown.length > 0) return;
+    	        for (let n = 0; n < question.c.length; n++) {
+    	        	playSample(question.c[n].cc);
+    	        }
 
-    }, delay);
+    	    }, parseInt(delay));
+    }
 
 }
 
@@ -482,7 +416,7 @@ function getQuestion() {
     } else {
         q = stack.splice(0, 1);
         q=q[0];
-        //rotate the notes in the chord to keep things interesting
+        // rotate the notes in the chord to keep things interesting
         if(q.c.length>1){
         	let c=q.c.splice(0,1);
         	q.c.push(c[0]);
@@ -625,16 +559,25 @@ function handleKeyPress(midiMessage) {
     let velocity = midiMessage.data[2];
 
     switch (command) {
-        case 144:
+        case midiCommands[1][midiChannel]:
             if (velocity > 0) {
                 noteOn(note, velocity);
             } else {
                 noteOff(note);
             }
             break;
-        case 128:
+        case midiCommands[0][midiChannel]:
             noteOff(note);
             break;
+        default: // maybe we are on the wrong midichannel. lets try to
+					// determine the correct channel
+        	if(typeof midiChannels[command] == 'undefined'){
+        		;// the command is not a noteOn/Off message so ignore it
+        	}else{
+        		// change the channel!
+        		midiChannel =  midiChannels[command];
+        		console.log('changed midi channel to '+midiChannel);
+        	}
     }
 }
 
@@ -692,7 +635,7 @@ function noteOff(note) {
 
     if (keysDown.length == 0) {
         drawNotes(question.c);
-        playQuestionNotes(questionPlayDelay);
+        playQuestionNotes(questionPlayDelay,questionPlayNoteDelay);
     }
 }
 
